@@ -144,7 +144,8 @@ static void check_one_bus(prom_handle ph)
             ret = i * sizeof(cells[0]);
             setprop = 1;
             printf("Added assigned-addresses");
-            if (!pci_read_config8(devfn, REG_INTERRUPT_LINE)) {
+            uint8_t int_line = pci_read_config8(devfn, REG_INTERRUPT_LINE);
+            if (int_line == 0 || int_line == 0xff) {
                 pci_write_config8(devfn, REG_INTERRUPT_LINE, 9);
                 printf(", set interrupt %04x", pci_read_config16(devfn, REG_INTERRUPT_LINE));
             }
