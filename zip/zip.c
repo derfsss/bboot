@@ -123,13 +123,13 @@ int zip_file_extract(zip_t *z, void *buffer)
                           LE16(lfh->fileNameLength) + LE16(lfh->extraFieldLength);
     switch(LE16(lfh->compressionMethod)) {
     case 0: /* store */
-        if (lfh->compressedSize != lfh->uncompressedSize) return Z_ERROR;
-        memcpy(buffer, bits, LE32(lfh->uncompressedSize));
+        if (gfh->compressedSize != gfh->uncompressedSize) return Z_ERROR;
+        memcpy(buffer, bits, LE32(gfh->uncompressedSize));
         break;
     case 8: /* deflate */
     {
-        unsigned long dstlen = LE32(lfh->uncompressedSize),
-                      srclen = LE32(lfh->compressedSize);
+        unsigned long dstlen = LE32(gfh->uncompressedSize),
+                      srclen = LE32(gfh->compressedSize);
         if (puff(buffer, &dstlen, bits, &srclen)) return Z_ERROR;
         break;
     }
