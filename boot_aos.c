@@ -94,6 +94,9 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
     return clen;
 }
 
+#define KEYWORD(p, str, len) (!strncmp(p, str, len) && (p[len] == ' ' || p[len] == '\t'))
+#define SPCORTAB(p) (*p == ' ' || *p == '\t')
+
 static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config)
 {
     zip_t z = {};
@@ -111,7 +114,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
     /* Assume we have free space after the zip */
     unsigned long avail = (unsigned long)zipdata + ziplen;
     unsigned long kicklayout_len = zip_file_uncompressedSize(&z);
-    char *kicklayout = prom_claim((void *)avail, kicklayout_len + 1, 0);
+    char *kicklayout = prom_claim((void *)avail, kicklayout_len + 2, 0);
     if (!kicklayout) {
         puts("Could not allocate memory");
         return 1;
@@ -120,27 +123,31 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
         puts("Could not extract file");
         return 1;
     }
-    kicklayout[kicklayout_len] = '\0';
+    kicklayout[kicklayout_len] = '\n';
+    kicklayout[kicklayout_len + 1] = '\0';
 
     char *p = kicklayout;
     printf("Parsing Kicklayout at %p (%lu bytes)\n", p, kicklayout_len);
     avail = KICKLIST_ADDR;
     list_t *kicklist = NULL;
     unsigned long inc;
-    char *end;
+    char *q, *end;
     int c, l;
     for (c = 0, l = 1;
          p && p - kicklayout < (int)kicklayout_len;
          l++, p = end + 1) {
         if (*p == '\0') break;
-        while (*p == ' ' || *p == '\t') p++;
+        while (SPCORTAB(p) || *p == '\r') p++;
         end = strchr(p, '\n');
         if (!end) goto error;
         if (*p == ';' || *p == '\n') continue;
         *end = '\0';
-        if (!strncmp(p, "LABEL ", 6)) {
+        for (q = end - 1; q > p && (SPCORTAB(q) || *q == '\r'); q--) /*NOP*/;
+        if (++q < end) *q = '\0';
+        if (KEYWORD(p, "LABEL", 5)) {
             if (++c == config) {
-                printf("Booting config %d: %s\n", c, &p[6]);
+                for (p += 5; SPCORTAB(p); p++) /*NOP*/;
+                printf("Booting config %d: %s\n", c, p);
                 kicklist = prom_claim((void *)avail, sizeof(*kicklist), 0);
                 if (!kicklist) {
                     puts("Could not allocate memory");
@@ -155,8 +162,8 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
         if (c != config) continue;
         if (kicklist->l_head->n_succ == NULL) {
             /* Look for EXEC first before MODULEs*/
-            if (!strncmp(p, "EXEC ", 5)) {
-                for (p += 4; *p == ' ' || *p == '\t'; p++) /*NOP*/;
+            if (KEYWORD(p, "EXEC", 4)) {
+                for (p += 4; SPCORTAB(p); p++) /*NOP*/;
                 inc = load_module_from_zip(&z, p, (void *)EXEC_ADDR, (void *)avail, kicklist);
                 if (!inc) {
                     puts("Could not load module");
@@ -165,8 +172,8 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
                 avail += inc;
             } else goto error;
         } else {
-            if (!strncmp(p, "MODULE ", 7)) {
-                for (p += 6; *p == ' ' || *p == '\t'; p++) /*NOP*/;
+            if (KEYWORD(p, "MODULE", 6)) {
+                for (p += 6; SPCORTAB(p); p++) /*NOP*/;
                 inc = load_module_from_zip(&z, p, NULL, (void *)avail, kicklist);
                 if (!inc) {
                     puts("Could not load module");
