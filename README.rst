@@ -39,7 +39,8 @@ is in the distribution archive. After preparing the initrd zip as
 described above, AmigaOS should boot using these QEMU options:
 
 .. code-block:: shell
-qemu-system-ppc -M -pegasos2 -kernel bboot -initrd Kickstart.zip
+
+  qemu-system-ppc -M -pegasos2 -kernel bboot -initrd Kickstart.zip
 
 When using -kernel there's no need to use -bios, then this will use
 VOF and the pegasos2 ROM is not needed. If additional kernel options
@@ -47,7 +48,8 @@ are to be passed to AmigaOS, these can be added with the -append
 option such as:
 
 .. code-block:: shell
--append "serial debuglevel=3"
+
+  -append "serial debuglevel=3"
 
 Apart from the primary usage above, the same bboot binary also works
 with the Pegasos2 ROM firmware which can be useful when debugging PCI
