@@ -1,4 +1,3 @@
-=================
 BBoot boot loader
 =================
 
@@ -40,7 +39,6 @@ is in the distribution archive. After preparing the initrd zip as
 described above, AmigaOS should boot using these QEMU options:
 
 .. code-block:: shell
-
 qemu-system-ppc -M -pegasos2 -kernel bboot -initrd Kickstart.zip
 
 When using -kernel there's no need to use -bios, then this will use
@@ -49,7 +47,6 @@ are to be passed to AmigaOS, these can be added with the -append
 option such as:
 
 .. code-block:: shell
-
 -append "serial debuglevel=3"
 
 Apart from the primary usage above, the same bboot binary also works
@@ -86,4 +83,4 @@ More info
 
 Copyright (c) 2023 BALATON Zoltan
 `<https://qmiga.osdn.io/>`_
-`<https://osdn.net/projects/qmiga/wiki/SubprojectBBoot?`_
+`<https://osdn.net/projects/qmiga/wiki/SubprojectBBoot>`_
