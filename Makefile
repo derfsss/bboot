@@ -24,7 +24,7 @@ DIRS=drivers include libc zip
 
 EXTRA_DIST=\
   COPYING \
-  README \
+  README.rst \
   Makefile \
   bboot.fth \
   bboot.lds
