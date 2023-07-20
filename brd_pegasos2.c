@@ -167,6 +167,7 @@ static void check_one_bus(prom_handle ph)
             if (PHYS_HI_TYPE(cells[i]) == 1) val = (val - iobase) | 1;
             if (cells[i] & PHYS_HI_PREFETCH) val |= 8;
             uint32_t reg = pci_read_config32(devfn, cells[i] & 0xff);
+            if (reg & 4) val |= 4;
             printf(" %8x %8x %8x  %8x %8x  | %08x", cells[i], cells[i + 1], cells[i + 2], cells[i + 3], cells[i + 4], reg);
             if (reg != val) {
                 printf(" ! %08x", val);
