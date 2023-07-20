@@ -71,6 +71,11 @@ parameters are now hard coded in drivers/uart8250mem.c. For
 explanation of the debug messages printed during boot, see comment at
 the top brd_pegasos2.c.
 
+Amiga file systems are case insensitive but BBoot is case sensitive so
+if a file is not found in Kickstart.zip check that its name matches
+what is in Kicklayout literally with no upper/lower case differences.
+In particular SFSFileSystem is sometimes written as SFSFilesystem.
+
 Source
 ======
 
