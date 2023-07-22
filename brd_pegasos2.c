@@ -106,14 +106,14 @@ static void check_one_bus(prom_handle ph)
             continue;
         }
         uint32_t devfn = cells[0];
+        uint32_t vendev = pci_read_config32(devfn, REG_VENDOR_ID);
         /* VOF fixup: enable on board USB functions */
         if (PCI_BUS(devfn) == 0 && PCI_SLOT(devfn) == 0xc &&
             (PCI_FUNC(devfn) == 2 || PCI_FUNC(devfn) == 3))
             pci_write_config16(devfn, REG_COMMAND, 7);
-        printf("/pci@%x/%s:\t%x:%x.%x \t%04x:%04x %x | %08x %04x %x\n", membase, name,
-               PCI_BUS(devfn), PCI_SLOT(devfn), PCI_FUNC(devfn), vendor_id, device_id, class_code,
-               pci_read_config32(devfn, REG_VENDOR_ID), pci_read_config16(devfn, REG_INTERRUPT_LINE),
-               pci_read_config16(devfn, REG_COMMAND));
+        printf("/pci@%x/%s:\t%x:%x.%x \t%04x:%04x %x | %08x %04x %x\n", membase, name, PCI_BUS(devfn),
+               PCI_SLOT(devfn), PCI_FUNC(devfn), vendor_id, device_id, class_code, vendev,
+               pci_read_config16(devfn, REG_INTERRUPT_LINE), pci_read_config16(devfn, REG_COMMAND));
 
         int i, n = ret / sizeof(cells[0]);
         for (i = 5; i < n; i += 5) {
@@ -145,7 +145,7 @@ static void check_one_bus(prom_handle ph)
             setprop = 1;
             printf("Added assigned-addresses");
             uint8_t int_line = pci_read_config8(devfn, REG_INTERRUPT_LINE);
-            if (int_line == 0 || int_line == 0xff) {
+            if ((int_line == 0 || int_line == 0xff) && vendev == (device_id << 16 | vendor_id)) {
                 pci_write_config8(devfn, REG_INTERRUPT_LINE, 9);
                 printf(", set interrupt %04x", pci_read_config16(devfn, REG_INTERRUPT_LINE));
             }
@@ -169,7 +169,7 @@ static void check_one_bus(prom_handle ph)
             uint32_t reg = pci_read_config32(devfn, cells[i] & 0xff);
             if (reg & 4) val |= 4;
             printf(" %8x %8x %8x  %8x %8x  | %08x", cells[i], cells[i + 1], cells[i + 2], cells[i + 3], cells[i + 4], reg);
-            if (reg != val) {
+            if (reg != val && vendev == (device_id << 16 | vendor_id)) {
                 printf(" ! %08x", val);
                 pci_write_config32(devfn, cells[i] & 0xff, val);
             }
