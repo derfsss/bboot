@@ -1,5 +1,5 @@
 VERSION=0
-REVISION=2
+REVISION=3
 BUILDDATE="unreleased"
 
 CROSS=powerpc64-linux-gnu-
