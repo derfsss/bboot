@@ -30,13 +30,11 @@
 #define CONSOLE_H
 
 void console_init(void);
-int putchar(int c);
-int puts(const char *s);
 
 struct console_output_driver;
 struct console_output_driver {
-	struct console_output_driver *next;
-	void (*putchar) (unsigned int);
+    struct console_output_driver *next;
+    void (*write)(const char *, unsigned int);
 };
 
 void console_add_output_driver(struct console_output_driver *out);

@@ -838,12 +838,8 @@ int printf(const char *fmt, ...)
 static int vprintf_write(const char *str, size_t count, void *unused)
 {
 	(void)unused;
-	size_t i;
-
-	for (i = 0; i < count; i++)
-		putchar(str[i]);
-
-	return i;
+	putchars(str, count);
+	return count;
 }
 
 int vprintf(const char *fmt, va_list ap)

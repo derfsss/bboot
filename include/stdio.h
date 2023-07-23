@@ -39,8 +39,9 @@ typedef struct _FILE FILE;
 
 extern FILE *stdout, *stdin, *stderr;
 
-extern int putchar(int c);
-extern int puts(const char *s);
+int putchar(int c);
+int puts(const char *s);
+void putchars(const char *s, size_t n);
 
 int snprintf(char *str, size_t size, const char *fmt, ...)
 	__attribute__ ((format (printf, 3, 4)));
