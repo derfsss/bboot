@@ -40,10 +40,11 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
         prom_puts(prom_stdout, "Unknown machine");
         prom_exit();
     }
-
-    if (0) {
+    cfg_init();
+    if (cfg_is_option('O', 'f')) {
         console_add_output_driver(&prom_consout);
-    } else {
+    }
+    if (cfg_is_option('O', 's')) {
         uart_init(SERIAL_PORT);
         console_add_output_driver(&serial_consout);
     }

@@ -26,6 +26,9 @@
 #define LE32(x) (x)
 #endif
 
+void cfg_init(void);
+char *cfg_get_option(const char s);
+int cfg_is_option(const char s, const char o);
 int boot_aos(unsigned long initrd_addr, unsigned long initrd_len);
 void pegasos2_init(void);
 

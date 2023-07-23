@@ -33,12 +33,14 @@ LIBC_OBJS=\
   libc/entry.o \
   libc/printf.o \
   libc/setjmp.o \
-  libc/string.o
+  libc/string.o \
+  libc/string_ppc.o
 
 SOURCES=\
   bboot.c \
   boot_aos.c \
   brd_pegasos2.c \
+  cfg.c \
   drivers/console.c \
   drivers/uart8250mem.c \
   drivers/pci.c \
