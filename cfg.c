@@ -11,11 +11,12 @@
  * The configuration string consists of space separated list of settings
  * denoted by capital letters that can be followed by lower case option letters.
  * Valid settings an their options are:
+ * A_ction" p: PCI config, b_oot
  * O_utput: f_irmware, s_erial
  * V_erbose level: 0-9, 0: errors only. 9: max
  */
 
-#define DEFAULT_OPTS "Os V5"
+#define DEFAULT_OPTS "Os V5 Apb"
 
 static char options[128];
 

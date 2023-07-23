@@ -56,8 +56,10 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
     char *p = cfg_get_option('V');
     if (p && *p >= '0' && *p <= '9') vlvl = *p - '0';
 
-    pegasos2_init();
-    boot_aos(r3, r4);
+    if (cfg_is_option('A', 'p'))
+        pegasos2_init();
+    if (cfg_is_option('A', 'b'))
+        boot_aos(r3, r4);
 
     puts("Booting failed, exiting.");
     prom_exit();
