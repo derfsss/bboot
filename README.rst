@@ -45,7 +45,7 @@ described above, AmigaOS should boot using these QEMU options:
 When using -kernel there's no need to use -bios, then this will use
 VOF and the pegasos2 ROM is not needed. If additional kernel options
 are to be passed to AmigaOS, these can be added with the -append
-option such as:
+option. This is not normally needed, only to get debug info, for example:
 
 .. code-block:: shell
 
@@ -59,7 +59,7 @@ must be given with the -bios pegasos2.rom option and the initrd and
 bboot binary must be loaded from the pegasos2 hard disk. The bboot.fth
 Forth script does this which can be loaded with "boot hd:0 bboot.fth"
 and should do the rest automatically. It assumes that bboot binary and
-Kickstart.zip are on hd:0 (first partition if first hard disk).
+Kickstart.zip are on hd:0 (first partition of first hard disk).
 
 Configuration
 =============
