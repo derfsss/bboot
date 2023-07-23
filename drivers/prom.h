@@ -49,6 +49,7 @@ void prom_close(prom_handle file);
 
 void prom_putchar(char);
 void prom_puts(prom_handle file, char *s);
+void prom_write(const char *s, unsigned int n);
 
 /* memory */
 

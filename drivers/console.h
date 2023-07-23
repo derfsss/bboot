@@ -29,8 +29,6 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-void console_init(void);
-
 struct console_output_driver;
 struct console_output_driver {
     struct console_output_driver *next;

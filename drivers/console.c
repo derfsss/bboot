@@ -7,20 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "console.h"
-#include "uart8250.h"
-
-#define SERIAL_PORT 1
-
-void serial_write(const char *s, unsigned int n)
-{
-    unsigned int i;
-    for (i= 0; i < n; i++)
-        uart_tx_byte(SERIAL_PORT, *s++);
-}
-
-static struct console_output_driver serial_consout = {
-    .write = &serial_write
-};
 
 static struct console_output_driver *console_out;
 
@@ -28,12 +14,6 @@ void console_add_output_driver(struct console_output_driver *out)
 {
     out->next = console_out;
     console_out = out;
-}
-
-void console_init(void)
-{
-    uart_init(SERIAL_PORT);
-    console_add_output_driver(&serial_consout);
 }
 
 int putchar(int c)

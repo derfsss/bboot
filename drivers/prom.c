@@ -193,6 +193,12 @@ void prom_puts(prom_handle file, char *s)
     }
 }
 
+void prom_write(const char *s, unsigned int n)
+{
+    call_prom("write", 3, 1, prom_stdout, s, n);
+}
+
+
 void prom_exit()
 {
     call_prom("exit", 0, 0);
