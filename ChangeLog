@@ -1,3 +1,10 @@
+0.3 (23.7.2023)
+Skip writing PCI regs if device does not match expected device
+Allow output to OF console
+Add configuration mechanism
+Allow setting verbose level, ouput and actions to perform
+Rewrite bboot.fth to find initrd size by itself
+
 0.2 (21.7.2023)
 Fixed reading zip file created by macOS Finder
 Improved Kicklayout parsing to accept badly formatted input

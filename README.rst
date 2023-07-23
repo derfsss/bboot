@@ -53,13 +53,26 @@ option such as:
 
 Apart from the primary usage above, the same bboot binary also works
 with the Pegasos2 ROM firmware which can be useful when debugging PCI
-or maybe booting a real machine faster. In this case -kernel and
--initrd cannot be used but the machine would boot with -bios
-pegasos2.rom option and the initrd and bboot binary must be loaded
-from the firmware prompt. See the bboot.fth Forth script for an
-example. One inconvenience is that the zip file size must be edited in
-the script then it can be loaded with "boot hd:0 bboot.fth" and should
-do the rest automatically.
+or maybe booting a real machine faster. When using with ROM firmware
+-kernel and -initrd options cannot be used but the firmware binary
+must be given with the -bios pegasos2.rom option and the initrd and
+bboot binary must be loaded from the pegasos2 hard disk. The bboot.fth
+Forth script does this which can be loaded with "boot hd:0 bboot.fth"
+and should do the rest automatically. It assumes that bboot binary and
+Kickstart.zip are on hd:0 (first partition if first hard disk).
+
+Configuration
+=============
+
+There are a few options that can be configured, see details in the
+comment in cfg.c. Options can be set in the device tree adding a
+/options/bboot string the same way as for example os4_commandline is
+defined. This is mostly only useful on real machine, with QEMU there
+is no way to set it currently but the defaults are set for QEMU so
+there should be no reason to change it anyway. On real hardware the
+settings "Of V0 Ab" (or V1 if you still want to get some feedback)
+might be better which skips most output so may be faster and will
+print errors to the SmartFirmware console so no serial is needed.
 
 Troubleshooting
 ===============
