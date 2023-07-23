@@ -15,6 +15,8 @@ static char verstag[] = "\0$VER: BBoot " STRINGIFY(VERSION) "." STRINGIFY(REVISI
 
 #define SERIAL_PORT 1
 
+int vlvl;
+
 static void serial_write(const char *s, unsigned int n)
 {
     unsigned int i;
@@ -50,6 +52,9 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
     }
     putchar('\n');
     puts(&verstag[7]);
+
+    char *p = cfg_get_option('V');
+    if (p && *p >= '0' && *p <= '9') vlvl = *p - '0';
 
     pegasos2_init();
     boot_aos(r3, r4);

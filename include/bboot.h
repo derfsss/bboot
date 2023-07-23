@@ -26,6 +26,9 @@
 #define LE32(x) (x)
 #endif
 
+extern int vlvl; /* verbosity level */
+#define VLVL(l, x) do if (vlvl >= l) { x; } while(0)
+
 void cfg_init(void);
 char *cfg_get_option(const char s);
 int cfg_is_option(const char s, const char o);

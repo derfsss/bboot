@@ -58,7 +58,10 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
         puts("Invalid file name");
         return 0;
     }
-    printf("Loading %s\n", name);
+    if (vlvl == 1)
+        putchar('.');
+    else if (vlvl > 1)
+        printf("Loading %s\n", name);
     if (zip_file_find(zip, path)) {
         puts("Could not find file");
         return 0;
@@ -104,7 +107,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
         puts("Invalid zip file");
         return 1;
     }
-    printf("Found zip with %lu entries\n", zip_numEntries(&z));
+    VLVL(2, printf("Found zip with %lu entries\n", zip_numEntries(&z)));
 
     /* Find and extract Kicklayout */
     if (zip_file_find(&z, "Kickstart/Kicklayout")) {
@@ -127,7 +130,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
     kicklayout[kicklayout_len + 1] = '\0';
 
     char *p = kicklayout;
-    printf("Parsing Kicklayout at %p (%lu bytes)\n", p, kicklayout_len);
+    VLVL(3, printf("Parsing Kicklayout at %p (%lu bytes)\n", p, kicklayout_len));
     avail = KICKLIST_ADDR;
     list_t *kicklist = NULL;
     unsigned long inc;
@@ -147,7 +150,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
         if (KEYWORD(p, "LABEL", 5)) {
             if (++c == config) {
                 for (p += 5; SPCORTAB(p); p++) /*NOP*/;
-                printf("Booting config %d: %s\n", c, p);
+                VLVL(1, printf("Booting config %d: %s\n", c, p));
                 kicklist = prom_claim((void *)avail, sizeof(*kicklist), 0);
                 if (!kicklist) {
                     puts("Could not allocate memory");
@@ -206,7 +209,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
         }
     }
 
-    puts("Starting exec");
+    VLVL(3, puts("Starting exec"));
     ((loader_func)EXEC_ADDR)("AmigaOS4", kicklist, prom_cientry(), args);
     return 0;
 error:
@@ -231,6 +234,6 @@ int boot_aos(unsigned long initrd_addr, unsigned long initrd_len)
         puts("Missing initrd");
         return 1;
     }
-    printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", initrd_addr, initrd_addr + initrd_len, initrd_len);
+    VLVL(3, printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", initrd_addr, initrd_addr + initrd_len, initrd_len));
     return boot_aos_zipkick((char *)initrd_addr, initrd_len, 1);
 }
