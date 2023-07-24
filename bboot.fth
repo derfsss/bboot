@@ -17,6 +17,5 @@ initrd-start
 " /chosen" find-device
   encode-int " linux,initrd-start" property
   encode-int " linux,initrd-end" property
-  .properties
 device-end
 boot hd:0 bboot
