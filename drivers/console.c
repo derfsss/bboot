@@ -29,21 +29,28 @@ int putchar(int c)
     return cc;
 }
 
+void putchars(const char *s, size_t n)
+{
+    struct console_output_driver *out;
+    const char *p, *q;
+    for (p = q = s; q - s < (int)n; p = q) {
+        for (q = p; q - s < (int)n && *q != '\n'; q++) /*NOP*/;
+        if (q > p) {
+            for (out = console_out; out; out = out->next)
+                out->write(p, q - p);
+        }
+        if (q - s < (int)n && *q) {
+            putchar('\n');
+            q++;
+        }
+    }
+}
+
 int puts(const char *s)
 {
     int n = strlen(s);
 
-    struct console_output_driver *out;
-    for (out = console_out; out; out = out->next) {
-        out->write(s, n);
-        out->write("\r\n", 2);
-    }
+    putchars(s, n);
+    putchar('\n');
     return n + 1;
-}
-
-void putchars(const char *s, size_t n)
-{
-    struct console_output_driver *out;
-    for (out = console_out; out; out = out->next)
-        out->write(s, n);
 }
