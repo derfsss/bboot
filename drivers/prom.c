@@ -36,7 +36,7 @@
 
 ihandle prom_stdin, prom_stdout;
 
-static ihandle prom_chosen, prom_options;
+static ihandle prom_chosen, prom_options = PROM_INVALID_HANDLE;
 
 struct prom_args {
     const char *service;
@@ -133,14 +133,14 @@ int prom_get_chosen(char *name, void *mem, int len)
 
 int prom_get_options(char *name, void *mem, int len)
 {
-    if (prom_options == (void *)-1)
+    if (prom_options == PROM_INVALID_HANDLE)
         return -1;
     return prom_getprop(prom_options, name, mem, len);
 }
 
 int prom_set_options(char *name, void *mem, int len)
 {
-    if (prom_options == (void *)-1)
+    if (prom_options == PROM_INVALID_HANDLE)
         return -1;
     return prom_setprop(prom_options, name, mem, len);
 }
