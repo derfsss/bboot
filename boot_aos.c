@@ -9,13 +9,9 @@
 #include <string.h>
 #include "aoslist.h"
 #include "bboot.h"
-#include "drivers/prom.h"
 #include "zip/zip.h"
 
-#define EXEC_ADDR 0x400000
 #define KICKLIST_ADDR 0xec00000
-
-typedef void (*loader_func)(const char *id, void *kicklist, void *ofci, char *cmdline);
 
 typedef struct {
     node_t node;
@@ -74,7 +70,7 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
         clen += sizeof(*mod) + nlen + 1;
         clen = ROUND_UP(clen, 32);
     }
-    void *bin = prom_claim((data ?: avail), clen, 0);
+    void *bin = brd.claim((data ?: avail), clen);
     if (!bin) {
         puts("Could not allocate memory");
         return 0;
@@ -86,7 +82,7 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
     if (data) {
         clen = sizeof(*mod) + nlen + 1;
         clen = ROUND_UP(clen, 32);
-        mod = prom_claim(avail, clen, 0);
+        mod = brd.claim(avail, clen);
         if (!mod) {
             puts("Could not allocate memory");
             return 0;
@@ -100,31 +96,37 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
 #define KEYWORD(p, str, len) (!strncmp(p, str, len) && (p[len] == ' ' || p[len] == '\t'))
 #define SPCORTAB(p) (*p == ' ' || *p == '\t')
 
-static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config)
+void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, unsigned long *avail_ret)
 {
+    if (!zipdata || !ziplen) {
+        puts("Missing initrd");
+        return NULL;
+    }
+    VLVL(3, printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", (unsigned long)zipdata,
+                   (unsigned long)zipdata + ziplen, ziplen));
     zip_t z = {};
     if (zip_openBuffer(&z, zipdata, ziplen)) {
         puts("Invalid zip file");
-        return 1;
+        return NULL;
     }
     VLVL(2, printf("Found zip with %lu entries\n", zip_numEntries(&z)));
 
     /* Find and extract Kicklayout */
     if (zip_file_find(&z, "Kickstart/Kicklayout")) {
         puts("Could not find Kicklayout");
-        return 1;
+        return NULL;
     }
     /* Assume we have free space after the zip */
     unsigned long avail = (unsigned long)zipdata + ziplen;
     unsigned long kicklayout_len = zip_file_uncompressedSize(&z);
-    char *kicklayout = prom_claim((void *)avail, kicklayout_len + 2, 0);
+    char *kicklayout = brd.claim((void *)avail, kicklayout_len + 2);
     if (!kicklayout) {
         puts("Could not allocate memory");
-        return 1;
+        return NULL;
     }
     if (zip_file_extract(&z, kicklayout)) {
         puts("Could not extract file");
-        return 1;
+        return NULL;
     }
     kicklayout[kicklayout_len] = '\n';
     kicklayout[kicklayout_len + 1] = '\0';
@@ -151,10 +153,10 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
             if (++c == config) {
                 for (p += 5; SPCORTAB(p); p++) /*NOP*/;
                 VLVL(1, printf("Booting config %d: %s\n", c, p));
-                kicklist = prom_claim((void *)avail, sizeof(*kicklist), 0);
+                kicklist = brd.claim((void *)avail, sizeof(*kicklist));
                 if (!kicklist) {
                     puts("Could not allocate memory");
-                    return 1;
+                    return NULL;
                 }
                 avail += sizeof(*kicklist);
                 alist_init(kicklist);
@@ -167,10 +169,10 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
             /* Look for EXEC first before MODULEs*/
             if (KEYWORD(p, "EXEC", 4)) {
                 for (p += 4; SPCORTAB(p); p++) /*NOP*/;
-                inc = load_module_from_zip(&z, p, (void *)EXEC_ADDR, (void *)avail, kicklist);
+                inc = load_module_from_zip(&z, p, brd.exec_addr, (void *)avail, kicklist);
                 if (!inc) {
                     puts("Could not load module");
-                    return 1;
+                    return NULL;
                 }
                 avail += inc;
             } else goto error;
@@ -180,7 +182,7 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
                 inc = load_module_from_zip(&z, p, NULL, (void *)avail, kicklist);
                 if (!inc) {
                     puts("Could not load module");
-                    return 1;
+                    return NULL;
                 }
                 avail += inc;
             } else goto error;
@@ -188,52 +190,11 @@ static int boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int confi
     }
     if (!kicklist || kicklist->l_head->n_succ == NULL) {
         puts("Could not find config in Kicklayout");
-        return 1;
+        return NULL;
     }
-
-    char *propname, *args = "";
-    prom_handle ph = prom_finddevice("/options");
-    if (ph != PROM_INVALID_HANDLE) {
-        propname = "os4_commandline";
-    } else {
-        ph = prom_finddevice("/chosen");
-        propname = "bootargs";
-    }
-    int args_len = prom_getproplen(ph, propname);
-    if (args_len > 0) {
-        char *buf = prom_claim((void *)avail, args_len, 0);
-        if (buf) {
-            avail += args_len;
-            if (prom_getprop(ph, propname, buf, args_len) == args_len)
-                args = buf;
-        }
-    }
-
-    VLVL(3, puts("Starting exec"));
-    ((loader_func)EXEC_ADDR)("AmigaOS4", kicklist, prom_cientry(), args);
-    return 0;
+    if (avail_ret) *avail_ret = avail;
+    return kicklist;
 error:
     printf("Error in Kicklayout line %u\n", l);
-    return 1;
-}
-
-int boot_aos(unsigned long initrd_addr, unsigned long initrd_len)
-{
-    if (!initrd_addr) {
-        if (prom_get_chosen("linux,initrd-start", &initrd_addr, sizeof(initrd_addr)) <= 0) {
-            puts("Cannot get inird start");
-            prom_exit();
-        }
-        if (prom_get_chosen("linux,initrd-end", &initrd_len, sizeof(initrd_len)) <= 0) {
-            puts("Cannot get inird end");
-            prom_exit();
-        }
-        initrd_len -= initrd_addr;
-    }
-    if (!initrd_addr || !initrd_len) {
-        puts("Missing initrd");
-        return 1;
-    }
-    VLVL(3, printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", initrd_addr, initrd_addr + initrd_len, initrd_len));
-    return boot_aos_zipkick((char *)initrd_addr, initrd_len, 1);
+    return NULL;
 }

@@ -221,7 +221,7 @@ static int bases_for_bus(prom_handle ph)
     return 1;
 }
 
-void pegasos2_init(void)
+static void pegasos2_setup(void)
 {
     prom_handle ph = prom_finddevice("/pci");
     if (ph && bases_for_bus(ph)) check_one_bus(ph);
@@ -232,4 +232,18 @@ void pegasos2_init(void)
     ph = prom_finddevice("/rtas");
     char rtas[] = "rtas";
     prom_setprop(ph, "name", rtas, sizeof(rtas));
+}
+
+static void *of_claim(void *addr, unsigned int size)
+{
+    return prom_claim(addr, size, 0);
+}
+
+void pegasos2_init(void)
+{
+    brd.claim = &of_claim;
+    brd.setup = &pegasos2_setup;
+    brd.info = prom_cientry();
+    brd.exec_addr = (void *)0x400000;
+    brd.serial_port = 1;
 }

@@ -29,10 +29,20 @@
 extern int vlvl; /* verbosity level */
 #define VLVL(l, x) do if (vlvl >= l) { x; } while(0)
 
+typedef struct {
+    void *(*claim)(void *addr, unsigned int size);
+    void (*setup)(void);
+    void *info;
+    void *exec_addr;
+    int serial_port;
+} brd_t;
+
+extern brd_t brd;
+
 void cfg_init(void);
 char *cfg_get_option(const char s);
 int cfg_is_option(const char s, const char o);
-int boot_aos(unsigned long initrd_addr, unsigned long initrd_len);
+void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, unsigned long *avail_ret);
 void pegasos2_init(void);
 
 #endif
