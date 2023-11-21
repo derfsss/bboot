@@ -206,6 +206,7 @@ static int bases_for_bus(prom_handle ph)
     }
     printf("/pci@%x: io %x/%x mem %x/%x\n", membase, iobase, iolen, membase, memlen);
     memavail = membase;
+    unsigned long pci_cfgbase;
     if (membase == 0x80000000) {
         ioresavail = IORES_START; /* reserved for south bridge functions */
         ioavail = IORES_TOP;
@@ -218,6 +219,7 @@ static int bases_for_bus(prom_handle ph)
         puts("Unknown PCI bus");
         return 0;
     }
+    pci_set_addr(pci_cfgbase, pci_cfgbase + 4);
     return 1;
 }
 

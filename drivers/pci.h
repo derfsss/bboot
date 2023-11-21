@@ -34,8 +34,6 @@
 #include <types.h>
 typedef u32 pcidev_t;
 
-extern unsigned long pci_cfgbase;
-
 /* Device config space registers. */
 #define REG_VENDOR_ID           0x00
 #define REG_DEVICE_ID           0x02
@@ -110,6 +108,8 @@ u32 pci_read_config32(u32 device, u16 reg);
 void pci_write_config8(u32 device, u16 reg, u8 val);
 void pci_write_config16(u32 device, u16 reg, u16 val);
 void pci_write_config32(u32 device, u16 reg, u32 val);
+
+void pci_set_addr(unsigned long conf_addr, unsigned long data_addr);
 #if 0
 int pci_find_device(u16 vid, u16 did, pcidev_t *dev);
 u32 pci_read_resource(pcidev_t dev, int bar);

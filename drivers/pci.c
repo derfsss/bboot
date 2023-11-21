@@ -31,42 +31,48 @@
 #include "ppc-mmio.h"
 #include "pci.h"
 
-unsigned long pci_cfgbase;
+static unsigned long pci_conf_addr, pci_data_addr;
+
+void pci_set_addr(unsigned long conf_addr, unsigned long data_addr)
+{
+    pci_conf_addr = conf_addr;
+    pci_data_addr = data_addr;
+}
 
 u8 pci_read_config8(pcidev_t device, u16 reg)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	return read8(pci_cfgbase + 4);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	return read8(pci_data_addr);
 }
 
 u16 pci_read_config16(pcidev_t device, u16 reg)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	return read16_le(pci_cfgbase + 4);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	return read16_le(pci_data_addr);
 }
 
 u32 pci_read_config32(pcidev_t device, u16 reg)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	return read32_le(pci_cfgbase + 4);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	return read32_le(pci_data_addr);
 }
 
 void pci_write_config8(pcidev_t device, u16 reg, u8 val)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	write8(pci_cfgbase + 4, val);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	write8(pci_data_addr, val);
 }
 
 void pci_write_config16(pcidev_t device, u16 reg, u16 val)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	write16_le(pci_cfgbase + 4, val);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	write16_le(pci_data_addr, val);
 }
 
 void pci_write_config32(pcidev_t device, u16 reg, u32 val)
 {
-	write32_le(pci_cfgbase, device | reg | (1UL << 31));
-	write32_le(pci_cfgbase + 4, val);
+	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	write32_le(pci_data_addr, val);
 }
 
 #if 0
