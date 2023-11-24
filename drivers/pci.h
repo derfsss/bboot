@@ -91,6 +91,17 @@ typedef u32 pcidev_t;
 #define HEADER_TYPE_CARDBUS       2
 #define HEADER_TYPE_MULTIFUNCTION 0x80
 
+#define BAR_SPACE_IO       1 /* 0 = memory, 1 = I/O */
+#define BAR_MEM_LIMIT_MASK 6
+#define BAR_MEM_LIMIT_32   0 /* 32 bit address */
+#define BAR_MEM_LIMIT_1M   2 /* Below 1M [obsolete] */
+#define BAR_MEM_LIMIT_64   4 /* 64 bit address */
+#define BAR_MEM_PREFETCH   8 /* prefetchable? */
+#define BAR_MEM_ATTR_MASK  0xf
+#define BAR_IO_ATTR_MASK   3 /* bit 1 is reserved if address_space = 1 */
+
+#define PCI_BAR(_bar) (REG_BAR0 + 4 * (_bar))
+
 #define PCI_ADDR(_bus, _dev, _fn, _reg) \
 (0x80000000 | (_bus << 16) | (_dev << 11) | (_fn << 8) | (_reg & ~3))
 
