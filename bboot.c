@@ -46,7 +46,7 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
             goto error;
         }
     } else {
-        goto error;
+        amigaone_init();
     }
     cfg_init();
     if (cfg_is_option('O', 'f')) {
@@ -81,6 +81,9 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
                 }
                 initrd_len -= initrd_addr;
             }
+        } else {
+            initrd_addr = 0x600000;
+            initrd_len = 0;
         }
         unsigned long avail;
         void *kicklist = boot_aos_zipkick((char *)initrd_addr, initrd_len, 1, &avail);

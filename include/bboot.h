@@ -43,6 +43,7 @@ void cfg_init(void);
 char *cfg_get_option(const char s);
 int cfg_is_option(const char s, const char o);
 void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, unsigned long *avail_ret);
+void amigaone_init(void);
 void pegasos2_init(void);
 
 #endif
