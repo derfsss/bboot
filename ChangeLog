@@ -1,3 +1,7 @@
+0.5 (03.12.2023)
+Add support for amigaone machine in QEMU
+Documentation updates
+
 0.4 (24.7.2023)
 Fix console output
 Documentation updates
