@@ -62,6 +62,22 @@ static void setup_isa(uint32_t devfn)
     pci_write_config8(devfn, 0x57, pci_irq_map[3] << 4);
 }
 
+static void setup_fdc(uint32_t devfn)
+{
+    /*  Enable Configuration mode */
+    pci_write_config8(devfn, 0x85, 3);
+    /*  Set floppy controller port to 0x3F0. */
+    write8(iobase + 0x3f0, 0xe3);
+    write8(iobase + 0x3f1, 0x3f << 2);
+    /*  Enable floppy controller */
+    write8(iobase + 0x3f0, 0xe2);
+    uint8_t c = read8(iobase + 0x3f1);
+    write8(iobase + 0x3f0, 0xe2);
+    write8(iobase + 0x3f1, c | 0x10);
+    /*  Switch of configuration mode */
+    pci_write_config8(devfn, 0x85, 1);
+}
+
 static void setup_ide(uint32_t devfn)
 {
     /*  Enable both IDE channels. */
@@ -92,6 +108,7 @@ static void setup_pci_device(uint32_t devfn)
         switch PCI_FUNC(devfn) {
         case 0:
             setup_isa(devfn);
+            setup_fdc(devfn);
             return;
         case 1:
             setup_ide(devfn);
