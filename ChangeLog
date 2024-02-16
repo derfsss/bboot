@@ -1,3 +1,6 @@
+0.6 (16.2.2024)
+Fix amigaone boot with QEMU 9.0
+
 0.5 (03.12.2023)
 Add support for amigaone machine in QEMU
 Documentation updates
