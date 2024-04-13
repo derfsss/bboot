@@ -12,6 +12,7 @@
 #include "zip/zip.h"
 
 #define KICKLIST_ADDR 0xec00000
+#define KICKLAYOUT "Kickstart/Kicklayout"
 
 typedef struct {
     node_t node;
@@ -59,7 +60,7 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
     else if (vlvl > 1)
         printf("Loading %s\n", name);
     if (zip_file_find(zip, path)) {
-        puts("Could not find file");
+        printf("Could not find file '%s'\n", path);
         return 0;
     }
     module_t *mod;
@@ -122,8 +123,8 @@ void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, un
     VLVL(2, printf("Found zip with %lu entries\n", zip_numEntries(&z)));
 
     /* Find and extract Kicklayout */
-    if (zip_file_find(&z, "Kickstart/Kicklayout")) {
-        puts("Could not find Kicklayout");
+    if (zip_file_find(&z, KICKLAYOUT)) {
+        printf("Could not find file '%s'\n", KICKLAYOUT);
         return NULL;
     }
     /* Assume we have free space after the zip */
