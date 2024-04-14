@@ -111,6 +111,9 @@ static void check_one_bus(prom_handle ph)
         if (PCI_BUS(devfn) == 0 && PCI_SLOT(devfn) == 0xc &&
             (PCI_FUNC(devfn) == 2 || PCI_FUNC(devfn) == 3))
             pci_write_config16(devfn, REG_COMMAND, 7);
+        /* Enable LSI SCSI cards */
+        if (vendor_id == 0x1000 && device_id < 0x14)
+            pci_write_config16(devfn, REG_COMMAND, 7);
         printf("/pci@%x/%s:\t%x:%x.%x \t%04x:%04x %x | %08x %04x %x\n", membase, name, PCI_BUS(devfn),
                PCI_SLOT(devfn), PCI_FUNC(devfn), vendor_id, device_id, class_code, vendev,
                pci_read_config16(devfn, REG_INTERRUPT_LINE), pci_read_config16(devfn, REG_COMMAND));
