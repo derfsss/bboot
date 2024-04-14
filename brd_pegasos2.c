@@ -33,6 +33,7 @@
 #include <types.h>
 #include "drivers/pci.h"
 #include "drivers/prom.h"
+#include "ppc-mmio.h"
 #include "bboot.h"
 
 #define PHYS_HI_PREFETCH (1UL << 30)
@@ -107,6 +108,11 @@ static void check_one_bus(prom_handle ph)
         }
         uint32_t devfn = cells[0];
         uint32_t vendev = pci_read_config32(devfn, REG_VENDOR_ID);
+        if (vendev == 0x82311106) {
+            /* ISA PIC init: enable level trigger for some interrupts */
+            write8(iobase + 0x4d0, 0xa4);
+            write8(iobase + 0x4d1, 0xe);
+        }
         /* VOF fixup: enable on board USB functions */
         if (PCI_BUS(devfn) == 0 && PCI_SLOT(devfn) == 0xc &&
             (PCI_FUNC(devfn) == 2 || PCI_FUNC(devfn) == 3))
