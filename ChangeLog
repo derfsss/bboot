@@ -1,3 +1,7 @@
+0.7 (15.4.2024)
+Add file name to error message to help finding wrong path
+Set interrupts to level trigger on pegasos2 for AmigaOS kernel
+
 0.6 (16.2.2024)
 Fix amigaone boot with QEMU 9.0
 
