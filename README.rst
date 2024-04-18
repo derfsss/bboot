@@ -87,7 +87,7 @@ There are a few options that can be configured, see details in the
 comment in cfg.c. Options under pegasos2 firmware can be set in the
 device tree adding a /options/bboot string the same way as for example
 os4_commandline is defined, that is first define a variable such as
-'16 nodefaults-bytes bboot' then set options with setenv bboot <opts
+'16 nodefault-bytes bboot' then set options with setenv bboot <opts
 string>. This is mostly only useful on real machine, with QEMU there
 is no way to set it currently but the defaults #define'ed in cfg.c as
 DEFAULT_OPTS are what is needed for QEMU so there should be no reason
