@@ -11,52 +11,55 @@ also works with QEMU's built in minimal Virtual Open Firmware (VOF) on
 pegasos2 or without U-Boot on amigaone.
 
 The amigaboot.of and slb_v2 boot loaders rely on firmware to read
-files from disk. Because BBoot runs without firmware it does not load
-files from disk but expects an initrd with the kickstart files in zip
-format loaded in memory and boots from that. This not only allows
-BBoot to remain simple but may also be more convenient to work with in
-an emulated environment and boot faster. The initrd should be a zip
-archive of all boot files within a Kickstart directory that can be
-created with "zip -r Kickstart.zip Kickstart/" for example. BBoot will
-look for Kickstart/Kicklayout file in the zip and boot the first
+files from disk. BBoot runs without firmware and does not have disk
+drivers so it does not load files from disk but instead expects an
+initrd with the kickstart files in zip format loaded in memory and
+boots from that. This not only allows BBoot to remain simple but may
+also be more convenient to work with in an emulated environment and
+boot faster. The initrd should be a zip archive of all boot files
+within a Kickstart directory that can be created with "zip -r
+Kickstart.zip Kickstart/" for example. BBoot will look for
+Kickstart/Kicklayout file within the zip file and boot the first
 config (LABEL) found in it. Currently BBoot takes no input and does
 not provide a boot menu so other than 1st config defined in Kicklayout
 cannot be chosen, but one could have different zip files for different
-configs and choose on the QEMU command line by using different
-Kickstart.zip.
+configs and choose on the QEMU command line by using a different
+initrd zip for each config.
 
 BBoot can also configure PCI devices that is normally done by the
 firmware. Linux and MorphOS don't need this as they scan and configure
 PCI devices themselves during boot but AmigaOS relies on the firmware
 to do this so BBoot implements this too. While configuring PCI, BBoot
 prints debug messages that can be useful to check how these devices
-are configured, which can help in debugging PCI pass through or even
-when using newer graphics cards on a real PegasosII as BBoot can also
-patch 64 bit BARs that the Pegasos2 version of AmigaOS kernel cannot
-handle.
+are configured. This can help in debugging PCI pass through or even
+using newer graphics cards on a real PegasosII as BBoot can also patch
+64 bit BARs that the Pegasos2 version of AmigaOS kernel cannot handle.
 
 Usage
 =====
 
 At least QEMU 8.1 is needed for the -initrd option on pegasos2 and
-QEMU 8.2 for the amigaone machine. The bboot binary is in the
-distribution archive. After preparing the Kickstart.zip as described
-above, AmigaOS should boot on pegasos2 using these QEMU options:
+QEMU 8.2 for the amigaone machine. A precompiled bboot binary is in
+the distribution archive. After preparing the Kickstart.zip as
+described above, AmigaOS should boot on pegasos2 using these QEMU
+options:
 
 .. code-block:: shell
 
   qemu-system-ppc -M pegasos2 -kernel bboot -initrd Kickstart.zip
 
-When using -kernel there's no need to use -bios, then this will use
-VOF and the pegasos2 ROM is not needed. If additional kernel options
-are to be passed to AmigaOS, these can be added with the -append
-option. This is not normally needed, only to get debug info, for example:
+When using -kernel there's no need to use -bios and the pegasos2 ROM
+is not needed, then it will use VOF (QEMU's built in Virtual Open
+Firmware). If additional kernel options are to be passed to AmigaOS,
+these can be added with the -append option. This is not normally
+needed, only to get debug info, for example:
 
 .. code-block:: shell
 
   -append "serial debuglevel=3"
 
-For booting amigaone the following QEMU options are needed:
+For booting amigaone where -kernel and -initrd options are not yet
+supported the following QEMU options are needed:
 
 .. code-block:: shell
 
@@ -73,12 +76,13 @@ with the Pegasos2 ROM firmware which can be useful when debugging PCI
 or even booting a real machine faster. When using with pegasos2 ROM
 the -kernel and -initrd options cannot be used, instead the firmware
 binary must be given with the -bios pegasos2.rom option and the initrd
-and bboot binary must be copied to the pegasos2 hard disk from where
-it's loaded. The bboot.fth Forth script can load these which can be
-run with "boot hd:0 bboot.fth" from the SmartFirmware ok prompt and
-should do the rest automatically. It assumes that bboot binary and
-Kickstart.zip are on hd:0 (first partition of first hard disk) or this
-can be edited in the beginning and end of bboot.fth.
+zip, bboot binary and bboot.fth must be copied to the pegasos2 hard
+disk from where it's loaded by the firmware rom. The bboot.fth Forth
+script can load these which can be run with "boot hd:0 bboot.fth" from
+the SmartFirmware ok prompt and should do the rest automatically. It
+assumes that bboot binary and Kickstart.zip are on hd:0 (first
+partition of first hard disk) or this can be edited in the beginning
+and end of bboot.fth.
 
 Configuration
 =============
