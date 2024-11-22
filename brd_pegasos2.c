@@ -90,7 +90,7 @@ static void check_one_bus(prom_handle ph)
     char name[64];
     for (ph = prom_child(ph); ph; ph = prom_peer(ph)) {
         int ret = prom_getprop(ph, "name", name, sizeof(name));
-        if (ret <- 0) {
+        if (ret < 0) {
             puts("Cannot get node name");
             continue;
         }
