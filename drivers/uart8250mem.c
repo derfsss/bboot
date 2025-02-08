@@ -24,9 +24,6 @@
 #include "ppc-mmio.h"
 #include "uart8250reg.h"
 
-/* Don't have a delay func yet, just poll without waiting */
-#define udelay(X)
-
 #define CONFIG_TTYS0_BAUD 115200
 /* Line Control Settings: 8bit, 1 stop bit, no parity */
 #define CONFIG_TTYS0_LCS  0x3
@@ -39,15 +36,6 @@ static unsigned int default_baudrate(void)
 static unsigned int uart_platform_refclk(void)
 {
 	return 115200;
-}
-
-#define CONFIG_IO_BASE 0xfe000000
-static const unsigned bases[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8 };
-
-static unsigned int uart_platform_base(int idx)
-{
-	if (idx > 3) return 0;
-	return CONFIG_IO_BASE + bases[idx];
 }
 
 /* Calculate divisor. Do not floor but round to nearest integer. */
@@ -64,6 +52,9 @@ static unsigned int uart_baudrate_divisor(unsigned int baudrate,
  */
 #define SINGLE_CHAR_TIMEOUT	(50 * 1000)
 #define FIFO_TIMEOUT		(16 * SINGLE_CHAR_TIMEOUT)
+
+/* Don't have a delay func yet, just poll without waiting */
+#define udelay(X)
 
 static int uart8250_mem_can_tx_byte(unsigned base_port)
 {
@@ -121,37 +112,28 @@ static void uart8250_mem_init(unsigned base_port, unsigned divisor)
 	write8(base_port + UART_LCR, CONFIG_TTYS0_LCS);
 }
 
-void uart_init(int idx)
+void uart_init(unsigned int base)
 {
-	u32 base = uart_platform_base(idx);
-	if (!base)
-		return;
-
+	if (!base) return;
 	unsigned int div;
 	div = uart_baudrate_divisor(default_baudrate(), uart_platform_refclk(), 1);
 	uart8250_mem_init(base, div);
 }
 
-void uart_tx_byte(int idx, unsigned char data)
+void uart_tx_byte(unsigned int base, unsigned char data)
 {
-	u32 base = uart_platform_base(idx);
-	if (!base)
-		return;
+	if (!base) return;
 	uart8250_mem_tx_byte(base, data);
 }
 
-unsigned char uart_rx_byte(int idx)
+unsigned char uart_rx_byte(unsigned int base)
 {
-	u32 base = uart_platform_base(idx);
-	if (!base)
-		return 0xff;
+	if (!base) return 0xff;
 	return uart8250_mem_rx_byte(base);
 }
 
-void uart_tx_flush(int idx)
+void uart_tx_flush(unsigned int base)
 {
-	u32 base = uart_platform_base(idx);
-	if (!base)
-		return;
+	if (!base) return;
 	uart8250_mem_tx_flush(base);
 }

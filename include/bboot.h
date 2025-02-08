@@ -34,7 +34,7 @@ typedef struct {
     void (*setup)(void);
     void *info;
     void *exec_addr;
-    int serial_port;
+    unsigned int serial_base;
 } brd_t;
 
 extern brd_t brd;

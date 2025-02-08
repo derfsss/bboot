@@ -224,6 +224,7 @@ void amigaone_init(void)
     brd.claim = &no_claim;
     brd.setup = &amigaone_setup;
     brd.exec_addr = (void *)0x1000000;
+    brd.serial_base = 0xfe0003f8;
     brd.info = &bd;
 
     bd.bi_memsize = find_memory_size(0);

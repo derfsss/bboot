@@ -21,7 +21,7 @@ typedef void (*loader_func)(const char *id, void *kicklist, void *info, char *cm
 static void serial_write(const char *s, unsigned int n)
 {
     while (n--)
-        uart_tx_byte(brd.serial_port, *s++);
+        uart_tx_byte(brd.serial_base, *s++);
 }
 
 static struct console_output_driver serial_consout = {
@@ -53,7 +53,7 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
         console_add_output_driver(&prom_consout);
     }
     if (cfg_is_option('O', 's')) {
-        uart_init(brd.serial_port);
+        uart_init(brd.serial_base);
         console_add_output_driver(&serial_consout);
     }
     putchar('\n');

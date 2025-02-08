@@ -256,5 +256,5 @@ void pegasos2_init(void)
     brd.setup = &pegasos2_setup;
     brd.info = prom_cientry();
     brd.exec_addr = (void *)0x400000;
-    brd.serial_port = 1;
+    brd.serial_base = 0xfe0002f8;
 }
