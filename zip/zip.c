@@ -1,6 +1,6 @@
 /*
- * Zip support for bboot
- * (c) 2023 BALATON Zoltan
+ * BBoot boot loader zip support
+ * Copyright (c) 2023 BALATON Zoltan
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

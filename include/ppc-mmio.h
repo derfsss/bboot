@@ -1,5 +1,5 @@
 /*
- * PPC MMIO routines
+ * BBoot boot loader PPC MMIO routines
  * Copyright (c) 2023 BALATON Zoltan
  * SPDX-License-Identifier: GPL-2.0-or-later
  */

@@ -1,5 +1,5 @@
 /*
- * AmigaOS boot support for bboot
+ * BBoot boot loader AmigaOS boot support
  * (c) 2023 BALATON Zoltan
  * SPDX-License-Identifier: GPL-2.0-or-later
  */

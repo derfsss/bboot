@@ -1,5 +1,5 @@
 /*
- *  Open Firmware client interface routines for BBoot
+ *  BBoot boot loader Open Firmware client interface routines
  *  Copyright (c) 2023 BALATON Zoltan
  *
  *  Based on:

@@ -1,5 +1,5 @@
 /*
- * BBoor boot loader console driver
+ * BBoot boot loader console driver
  * Copyright (c) 2023 BALATON Zoltan
  * SPDX-License-Identifier: GPL-2.0-or-later
  */

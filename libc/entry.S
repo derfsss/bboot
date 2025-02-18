@@ -1,3 +1,9 @@
+/*
+ * BBoot boot loader
+ * Copyright (c) 2023 BALATON Zoltan
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 	.globl _start;
 _start:
 	/* Make sure we have a stack */

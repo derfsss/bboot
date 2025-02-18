@@ -1,5 +1,5 @@
 /*
- * BBoor config handling
+ * BBoot boot loader config handling
  * Copyright (c) 2023 BALATON Zoltan
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
