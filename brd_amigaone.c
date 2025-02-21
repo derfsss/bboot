@@ -215,8 +215,7 @@ static unsigned int find_memory_size(unsigned int start)
 
 static void *no_claim(void *addr, unsigned int size)
 {
-    (void)size; /* unused */
-    return addr;
+    return (unsigned long)addr + size < bd.bi_memsize ? addr : NULL;
 }
 
 void amigaone_init(void)
