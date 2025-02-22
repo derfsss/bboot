@@ -12,6 +12,7 @@ _start:
 	lis 1,__executable_start@h
 	ori 1,1,__executable_start@l
 	addi 1,1,-8
-1:	lis 2,__toc_start@h
+1:	mr 8,2
+	lis 2,__toc_start@h
 	ori 2,2,__toc_start@l
 	b start

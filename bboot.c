@@ -32,9 +32,14 @@ static struct console_output_driver prom_consout = {
     .write = &prom_write
 };
 
-int start(unsigned long r3, unsigned long r4, unsigned long r5)
+int start(unsigned long r3, unsigned long r4, unsigned long r5,
+          unsigned long r6, unsigned long r7, unsigned long r8)
 {
-    if (r5) {
+    int of = 0;
+    if (r8 == 1024 || !r5) {
+        amigaone_init();
+    } else {
+        of = 1;
         prom_init((void *)r5);
         prom_handle ph = prom_finddevice("/");
         char model[32] = {};
@@ -45,8 +50,6 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
             prom_puts(prom_stdout, "Unknown machine");
             goto error;
         }
-    } else {
-        amigaone_init();
     }
     cfg_init();
     if (cfg_is_option('O', 'f')) {
@@ -67,7 +70,7 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
 
     if (cfg_is_option('A', 'b')) {
         unsigned long initrd_addr, initrd_len;
-        if (r5) {
+        if (of) {
             initrd_addr = r3;
             initrd_len = r4;
             if (!initrd_addr) {
@@ -79,18 +82,23 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
                     puts("Cannot get inird end");
                     goto error;
                 }
-                initrd_len -= initrd_addr;
+                if (initrd_len) initrd_len -= initrd_addr;
             }
         } else {
-            initrd_addr = 0x600000;
-            initrd_len = 0;
+            if (r4) {
+                initrd_addr = r4;
+                initrd_len = r5 > r4 ? r5 - r4 : 0;
+            } else {
+                initrd_addr = 0x600000;
+                initrd_len = 0;
+            }
         }
         unsigned long avail;
         void *kicklist = boot_aos_zipkick((char *)initrd_addr, initrd_len, 1, &avail);
         if (!kicklist) goto error;
 
         char *args = "";
-        if (r5) {
+        if (of) {
             char *propname;
             prom_handle ph = prom_finddevice("/options");
             if (ph != PROM_INVALID_HANDLE) {
@@ -108,6 +116,8 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
                       args = buf;
                 }
             }
+        } else if (r6 && r7 > r6) {
+            args = (char *)r6;
         }
         VLVL(3, puts("Starting exec"));
         ((loader_func)brd.exec_addr)("AmigaOS4", kicklist, brd.info, args);
@@ -115,6 +125,6 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5)
 
     puts("Booting failed, exiting.");
 error:
-    if (r5) prom_exit();
+    if (of) prom_exit();
     return 0;
 }
