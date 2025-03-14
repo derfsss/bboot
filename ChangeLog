@@ -1,3 +1,7 @@
+0.8 (15.3.2025)
+Add support for initrd and append options on amigaone for QEMU 10.0
+Documentation updates
+
 0.7 (15.4.2024)
 Add file name to error message to help finding wrong path
 Set interrupts to level trigger on pegasos2 for AmigaOS kernel
@@ -6,7 +10,7 @@ Set interrupts to level trigger on pegasos2 for AmigaOS kernel
 Fix amigaone boot with QEMU 9.0
 
 0.5 (03.12.2023)
-Add support for amigaone machine in QEMU
+Add support for amigaone machine in QEMU 8.2
 Documentation updates
 
 0.4 (24.7.2023)

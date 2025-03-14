@@ -38,11 +38,11 @@ using newer graphics cards on a real PegasosII as BBoot can also patch
 Usage
 =====
 
-At least QEMU 8.1 is needed for the -initrd option on pegasos2 and
-QEMU 8.2 for the amigaone machine. A precompiled bboot binary is in
-the distribution archive. After preparing the Kickstart.zip as
-described above, AmigaOS should boot on pegasos2 using these QEMU
-options:
+At least QEMU 8.1 is needed which added -initrd option for pegasos2 or
+QEMU 8.2 for the amigaone machine and QEMU 10.0 for -initrd on
+amigaone. A pre-compiled bboot binary is in the distribution archive.
+After preparing the Kickstart.zip as described above, AmigaOS should
+boot using these QEMU options:
 
 .. code-block:: shell
 
@@ -58,8 +58,9 @@ needed, only to get debug info, for example:
 
   -append "serial debuglevel=3"
 
-For booting amigaone where -kernel and -initrd options are not yet
-supported the following QEMU options are needed:
+For booting amigaone with QEMU before version 10.0 where -kernel and
+-initrd options were not yet supported or for BBoot versions less than
+0.8 the following QEMU options are needed:
 
 .. code-block:: shell
 
@@ -67,22 +68,23 @@ supported the following QEMU options are needed:
                   -device loader,addr=0x600000,file=Kickstart.zip
 
 On amigaone, firmware ROM can be added with -bios but it's bypassed
-with bboot and not needed. Running bboot from U-Boot is not supported
-and there is no way to pass command line or configuration options on
-amigaone currently as environment is not emulated yet.
+with bboot and not needed. Running BBoot from U-Boot is not supported.
 
 Apart from the primary usage above, the same bboot binary also works
 with the Pegasos2 ROM firmware which can be useful when debugging PCI
-or even booting a real machine faster. When using with pegasos2 ROM
-the -kernel and -initrd options cannot be used, instead the firmware
-binary must be given with the -bios pegasos2.rom option and the initrd
-zip, bboot binary and bboot.fth must be copied to the pegasos2 hard
-disk from where it's loaded by the firmware rom. The bboot.fth Forth
-script can load these which can be run with "boot hd:0 bboot.fth" from
-the SmartFirmware ok prompt and should do the rest automatically. It
-assumes that bboot binary and Kickstart.zip are on hd:0 (first
-partition of first hard disk) or this can be edited in the beginning
-and end of bboot.fth.
+or using vfio-pci with QEMU on Linux host to pass through graphics
+cards (for some cards the BIOS emulator in the firmware may be needed
+to correctly initialise the card but BBoot is also needed to fix up 64
+bit BARs and interrupts for the AmigaOS kernel) or even to boot a real
+machine faster. When using with pegasos2 ROM the -kernel and -initrd
+options cannot be used, instead the firmware binary must be given with
+the -bios pegasos2.rom option and the Kickstart.zip, bboot binary and
+bboot.fth must be copied to the pegasos2 hard disk from where it's
+loaded by the firmware ROM. The bboot.fth Forth script can load these
+which can be run with "boot hd:0 bboot.fth" from the SmartFirmware ok
+prompt and should do the rest automatically. It assumes that bboot
+binary and Kickstart.zip are on hd:0 (first partition of first hard
+disk) or this can be edited in the beginning and end of bboot.fth.
 
 Configuration
 =============
@@ -105,16 +107,18 @@ and serial with "Ofs".
 Troubleshooting
 ===============
 
-BBoot uses serial output to log all messages so look for errors there.
-On QEMU it can be redirected with -serial stdio or similar. On real
-hardware it should set 115200,8,N,1. These parameters are now hard
-coded in drivers/uart8250mem.c. For explanation of the debug messages
-printed during boot, see comment at the top brd_pegasos2.c.
+BBoot uses serial output by default to log all messages so look for
+errors there. On QEMU it can be redirected with -serial stdio or
+appear in a virtual console window. On real hardware it should set
+115200,8,N,1. These parameters are now hard coded in
+drivers/uart8250mem.c. For explanation of the PCI configuration debug
+messages printed during boot, see comment at the top brd_pegasos2.c.
 
 Amiga file systems are case insensitive but BBoot is case sensitive so
 if a file is not found in Kickstart.zip check that its name matches
 what is in Kicklayout literally with no upper/lower case differences.
-In particular SFSFileSystem is sometimes written as SFSFilesystem.
+In particular SFSFileSystem is sometimes written as SFSFilesystem so
+either Kicklayout needs to be edited or the file renamed.
 
 Source
 ======
