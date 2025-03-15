@@ -18,6 +18,7 @@ ASFLAGS=$(ARCH_CFLAGS)
 CPPFLAGS=-Iinclude -DVERSION=$(VERSION) -DREVISION=$(REVISION) -DBUILDDATE='$(BUILDDATE)'
 LDFLAGS=-nostdlib -e_start -static -Wl,-n,-Tbboot.lds,--build-id=none
 LDFLAGS+=-Wl,--gc-sections,--orphan-handling=discard
+LDFLAGS+=$(ARCH_CFLAGS)
 LDLIBS=-L$(shell $(CC) -print-file-name=32) -lgcc
 
 DIRS=drivers include libc zip
