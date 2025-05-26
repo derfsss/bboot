@@ -99,22 +99,13 @@ static unsigned long load_module_from_zip(zip_t *zip, char *path, void *data, vo
 
 void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, unsigned long *avail_ret)
 {
-    /* Try to find approximate end of zip file if not given */
-    if (!ziplen && zipdata && *(unsigned long *)zipdata == BE32(0x504b0304)) {
-        const char *empty[32] = {};
-        const char *p = zipdata;
-        while (ziplen++ < 512 * 1024) {
-            if (!memcmp(p, empty, sizeof(empty))) break;
-            p += sizeof(empty);
-        }
-        ziplen = (ziplen < 512 * 1024) ? p - zipdata : 0;
-    }
+    if (!ziplen) ziplen = zip_findLen(zipdata, 16 * 1024 * 1024);
+    VLVL(3, printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", (unsigned long)zipdata,
+                   (unsigned long)zipdata + ziplen, ziplen));
     if (!zipdata || !ziplen) {
         puts("Missing initrd");
         return NULL;
     }
-    VLVL(3, printf("Checking initrd at 0x%lx-0x%lx (%lu bytes)\n", (unsigned long)zipdata,
-                   (unsigned long)zipdata + ziplen, ziplen));
     zip_t z = {};
     if (zip_openBuffer(&z, zipdata, ziplen)) {
         puts("Invalid zip file");

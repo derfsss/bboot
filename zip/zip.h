@@ -17,7 +17,8 @@ typedef struct {
     void *gfh;
 } zip_t;
 
-int zip_openBuffer(zip_t *z, const char *zibdata, unsigned long ziplen);
+unsigned long zip_findLen(const char *zipdata, unsigned long maxlen);
+int zip_openBuffer(zip_t *z, const char *zipdata, unsigned long ziplen);
 unsigned long zip_numEntries(zip_t *z);
 int zip_readdir(zip_t *z);
 unsigned long zip_file_compressedSize(zip_t *z);

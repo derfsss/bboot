@@ -11,6 +11,19 @@
 #include "puff.h"
 #include "zip.h"
 
+/* Try to find approximate end of zip file */
+unsigned long zip_findLen(const char *zipdata, unsigned long maxlen)
+{
+    if (zipdata && *(unsigned long *)zipdata == BE32(0x504b0304)) {
+        unsigned long i = sizeof(JZLocalFileHeader);
+        for (zipdata += i; i < maxlen; i++) {
+            if (*(unsigned long *)zipdata++ == BE32(0x504b0506))
+                return i + sizeof(JZEndRecord);
+        }
+    }
+    return 0;
+}
+
 int zip_openBuffer(zip_t *z, const char *zipdata, unsigned long ziplen)
 {
     long i;
