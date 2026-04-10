@@ -75,12 +75,10 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
             initrd_len = r4;
             if (!initrd_addr) {
                 if (prom_get_chosen("linux,initrd-start", &initrd_addr, sizeof(initrd_addr)) <= 0) {
-                    puts("Cannot get inird start");
-                    goto error;
+                    VLVL(5, puts("Could not get initrd start"));
                 }
                 if (prom_get_chosen("linux,initrd-end", &initrd_len, sizeof(initrd_len)) <= 0) {
-                    puts("Cannot get inird end");
-                    goto error;
+                    VLVL(5, puts("Could not get initrd end"));
                 }
                 if (initrd_len) initrd_len -= initrd_addr;
             }
@@ -88,10 +86,11 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
             if (r4) {
                 initrd_addr = r4;
                 initrd_len = r5 > r4 ? r5 - r4 : 0;
-            } else {
-                initrd_addr = 0x600000;
-                initrd_len = 0;
             }
+        }
+        if (!initrd_addr) {
+            initrd_addr = 0x600000;
+            initrd_len = 0;
         }
         unsigned long avail;
         void *kicklist = boot_aos_zipkick((char *)initrd_addr, initrd_len, 1, &avail);
