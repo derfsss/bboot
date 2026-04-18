@@ -35,6 +35,9 @@ typedef struct {
     void *info;
     void *exec_addr;
     unsigned int serial_base;
+    unsigned long initrd_start;
+    unsigned long initrd_end;
+    char *bootargs;
 } brd_t;
 
 extern brd_t brd;
@@ -45,5 +48,6 @@ int cfg_is_option(const char s, const char o);
 void *boot_aos_zipkick(const char *zipdata, unsigned long ziplen, int config, unsigned long *avail_ret);
 void amigaone_init(void);
 void pegasos2_init(void);
+void sam460_init(unsigned long fdt_addr);
 
 #endif

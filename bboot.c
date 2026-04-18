@@ -36,7 +36,9 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
           unsigned long r6, unsigned long r7, unsigned long r8)
 {
     int of = 0;
-    if (r8 == 1024 || !r5) {
+    if (r6 == 0x45504150) {         /* ePAPR magic: SAM460 via QEMU -kernel */
+        sam460_init(r3);            /* r3 = FDT address */
+    } else if (r8 == 1024 || !r5) {
         amigaone_init();
     } else {
         of = 1;
@@ -69,7 +71,7 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
         brd.setup();
 
     if (cfg_is_option('A', 'b')) {
-        unsigned long initrd_addr, initrd_len;
+        unsigned long initrd_addr = 0, initrd_len = 0;
         if (of) {
             initrd_addr = r3;
             initrd_len = r4;
@@ -82,6 +84,10 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
                 }
                 if (initrd_len) initrd_len -= initrd_addr;
             }
+        } else if (brd.initrd_start) {
+            initrd_addr = brd.initrd_start;
+            initrd_len = brd.initrd_end > brd.initrd_start ?
+                         brd.initrd_end - brd.initrd_start : 0;
         } else {
             if (r4) {
                 initrd_addr = r4;
@@ -115,6 +121,8 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
                       args = buf;
                 }
             }
+        } else if (brd.bootargs) {
+            args = brd.bootargs;
         } else if (r6 && r7 > r6) {
             args = (char *)r6;
         }

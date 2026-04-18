@@ -60,6 +60,7 @@ void *call_prom(const char *service, int nargs, int nret, ...)
     int i;
     struct prom_args prom_args;
 
+    if (!prom) return (void *)-1;
     prom_args.service = service;
     prom_args.nargs = nargs;
     prom_args.nret = nret;
