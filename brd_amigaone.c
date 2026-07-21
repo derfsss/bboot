@@ -237,8 +237,8 @@ void amigaone_init(void)
      * rejects them. Widened once the MMU layer grows large-page / full-RAM
      * coverage (see docs/reimpl/g5-port.md).
      */
-    if (bd.bi_memsize > 0x16800000)
-        bd.bi_memsize = 0x16800000;
+    if (bd.bi_memsize > 0x40000000)
+        bd.bi_memsize = 0x40000000;
 #endif
     bd.bi_flashstart = 0xfff00000;
     bd.bi_flashsize = 1;
