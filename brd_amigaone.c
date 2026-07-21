@@ -227,6 +227,19 @@ void amigaone_init(void)
     brd.info = &bd;
 
     bd.bi_memsize = find_memory_size(0);
+#ifdef TARGET_G5
+    /*
+     * G5/PPC970 bring-up: the kernel's MMU_InitPageTables_970 identity-maps RAM
+     * 0..384 MiB (+ the IO windows) and parks its 8 MiB HTAB at 0x16800000 (360
+     * MiB). Cap the RAM reported to the loader/kernel to 360 MiB so the allocator
+     * never walks past usable RAM or into the HTAB. Must stay ABOVE bboot's
+     * KICKLIST_ADDR (0x0ec00000 = 236 MiB) where modules load, else no_claim()
+     * rejects them. Widened once the MMU layer grows large-page / full-RAM
+     * coverage (see docs/reimpl/g5-port.md).
+     */
+    if (bd.bi_memsize > 0x16800000)
+        bd.bi_memsize = 0x16800000;
+#endif
     bd.bi_flashstart = 0xfff00000;
     bd.bi_flashsize = 1;
     bd.bi_bootflags = 1;

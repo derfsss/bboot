@@ -97,6 +97,37 @@ $(S)/%.o: %.S
 bboot-sam460: $(SAM460_OBJS)
 	$(CC) $(SAM460_LDFLAGS) -o $@ $^ $(LDLIBS)
 
+# --- G5 (PPC970) target ---
+# Same board sources as amigaone, but built 32-bit (G3 ISA) with -DTARGET_G5 so
+# libc/entry.S drops MSR[SF] to run the whole chain in 32-bit mode on the 970,
+# which resets in 64-bit mode. Boots via:
+#   qemu-system-ppc64 -M amigaone -cpu 970fx -kernel bboot-g5 \
+#       -device loader,addr=0x600000,file=Kickstart.zip
+# Build (native 32-bit ppc cross-gcc has 32-bit libgcc for __udivdi3):
+#   make bboot-g5 CROSS=powerpc-linux-gnu- LDLIBS=-lgcc
+G=build-g5
+G5_ARCH=-mbig-endian -mcpu=G3
+G5_CFLAGS=-Wall -Wextra -O2 -g $(G5_ARCH) $(EXTRA_CFLAGS)
+G5_CPPFLAGS=$(CPPFLAGS) -DTARGET_G5
+G5_LDFLAGS=-nostdlib -e_start -static -Wl,-n,-Tbboot.lds,--build-id=none
+G5_LDFLAGS+=-Wl,--gc-sections,--orphan-handling=discard
+G5_LDFLAGS+=$(G5_ARCH)
+
+G5_OBJS=$(addprefix $(G)/,$(SOURCES:.c=.o)) \
+  $(G)/libc/entry.o $(G)/libc/printf.o $(G)/libc/setjmp.o \
+  $(G)/libc/string.o $(G)/libc/string_ppc.o
+
+$(G)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) -c $(G5_CPPFLAGS) $(G5_CFLAGS) -o $@ $<
+
+$(G)/%.o: %.S
+	@mkdir -p $(dir $@)
+	$(CC) -c $(G5_CPPFLAGS) $(G5_ARCH) -o $@ $<
+
+bboot-g5: $(G5_OBJS)
+	$(CC) $(G5_LDFLAGS) -o $@ $^ $(LDLIBS)
+
 .PHONY: strip clean distclean dist
 
 strip: bboot

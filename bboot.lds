@@ -27,6 +27,7 @@ SECTIONS {
 		*(.data)
 		*(.rodata .rodata.*)
 		*(.got1)
+		*(.got2)
 		*(.sdata)
 		*(.opd)
 	}
