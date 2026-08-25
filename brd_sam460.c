@@ -114,6 +114,85 @@ static void write_tlb(int index, uint32_t w0, uint32_t w1, uint32_t w2)
 }
 
 /*
+ * Universal Interrupt Controllers.
+ *
+ * U-Boot programs all four UICs in board_early_init_f() and AmigaOS relies
+ * on that: it enables the interrupts it wants but leaves the polarity,
+ * trigger and critical selection alone. Out of reset the polarity register
+ * is zero, i.e. every input is treated as active low, so the level-high
+ * lines - which is all of the PCI ones, cascaded into UIC0 through UIC1 -
+ * never register and drivers wait forever for interrupts that cannot
+ * arrive. Values are U-Boot's, from board/ACube/Sam460ex/Sam460ex.c.
+ *
+ * DCR bases: UIC0 0xc0, UIC1 0xd0, UIC2 0xe0, UIC3 0xf0; +0 SR, +2 ER,
+ * +3 CR, +4 PR, +5 TR, +7 VR.
+ */
+#define MTDCR(dcrn, val)     asm volatile("mtdcr %0,%1" : : "i"(dcrn), "r"((uint32_t)(val)))
+
+static void setup_uic(void)
+{
+    MTDCR(0xc0, 0xffffffff);    /* UIC0 SR: clear all */
+    MTDCR(0xc2, 0x00000000);    /* UIC0 ER: disable all */
+    MTDCR(0xc3, 0x00000005);    /* UIC0 CR: ATI and UIC1 crit are critical */
+    MTDCR(0xc4, 0xffffffff);    /* UIC0 PR */
+    MTDCR(0xc5, 0x00000000);    /* UIC0 TR: level triggered */
+    MTDCR(0xc7, 0x00000000);    /* UIC0 VR: int31 highest, base 0 */
+    MTDCR(0xc0, 0xffffffff);    /* UIC0 SR: clear all */
+
+    MTDCR(0xd0, 0xffffffff);    /* UIC1 SR */
+    MTDCR(0xd2, 0x00000000);    /* UIC1 ER */
+    MTDCR(0xd3, 0x00000000);    /* UIC1 CR: all non-critical */
+    MTDCR(0xd4, 0xefffffff);    /* UIC1 PR: IRQ2 (PCI) negative */
+    MTDCR(0xd5, 0x00000000);    /* UIC1 TR */
+    MTDCR(0xd7, 0x00000000);    /* UIC1 VR */
+    MTDCR(0xd0, 0xffffffff);    /* UIC1 SR */
+
+    MTDCR(0xe0, 0xffffffff);    /* UIC2 SR */
+    MTDCR(0xe2, 0x00000000);    /* UIC2 ER */
+    MTDCR(0xe3, 0x00000000);    /* UIC2 CR */
+    MTDCR(0xe4, 0xffffffff);    /* UIC2 PR */
+    MTDCR(0xe5, 0x00000000);    /* UIC2 TR */
+    MTDCR(0xe7, 0x00000000);    /* UIC2 VR */
+    MTDCR(0xe0, 0xffffffff);    /* UIC2 SR */
+
+    MTDCR(0xf0, 0xffffffff);    /* UIC3 SR */
+    MTDCR(0xf2, 0x00000000);    /* UIC3 ER */
+    MTDCR(0xf3, 0x00000000);    /* UIC3 CR */
+    MTDCR(0xf4, 0xffefffff);    /* UIC3 PR: IRQ12 (SM502) negative */
+    MTDCR(0xf5, 0x00000000);    /* UIC3 TR */
+    MTDCR(0xf7, 0x00000000);    /* UIC3 VR */
+    MTDCR(0xf0, 0xffffffff);    /* UIC3 SR */
+}
+
+/*
+ * Decrementer.
+ *
+ * U-Boot's interrupt_init_cpu() leaves the decrementer running with a 1ms
+ * auto-reload tick and AmigaOS inherits it rather than programming the
+ * timer itself. Without it the boot gets as far as initialising devices
+ * and then stops: everything that waits on a timeout waits forever, no
+ * decrementer exception is ever raised and the CPU sits idle.
+ *
+ * SPRs: 22 DEC, 54 DECAR, 63 IVPR, 336 TSR, 340 TCR.
+ */
+#define MFSPR(n) ({ uint32_t __v; asm volatile("mfspr %0," #n : "=r"(__v)); __v; })
+#define MTSPR(n, v) asm volatile("mtspr " #n ",%0" : : "r"((uint32_t)(v)))
+
+static void setup_timer(uint32_t intfreq)
+{
+    uint32_t reload = intfreq / 1000;   /* 1ms */
+
+    MTSPR(340, MFSPR(340) & ~0x04400000);   /* TCR: clear DIE and ARE */
+    MTSPR(22, 0);                           /* DEC */
+    MTSPR(54, 0);                           /* DECAR: clear reload */
+    MTSPR(336, 0x08000000);                 /* TSR: clear DEC status */
+    MTSPR(54, reload);                      /* DECAR: auto-reload value */
+    MTSPR(22, reload);                      /* DEC: initial value */
+    MTSPR(340, MFSPR(340) | 0x04400000);    /* TCR: DIE | ARE */
+    MTSPR(63, 0);                           /* IVPR: vectors at 0 */
+}
+
+/*
  * The mapping U-Boot leaves in place for AmigaOS, transcribed from
  * board/ACube/Sam460ex/init.S of ACube's U-Boot 2015.d. SDRAM is not in
  * this table: U-Boot programs it at run time from the DDR2 init.
@@ -381,6 +460,7 @@ void sam460_init(unsigned long fdt_addr)
     }
 
     setup_tlb(memsize);
+    setup_uic();
 
     /*
      * Stack near the top of RAM, like U-Boot leaves it: it relocates
@@ -408,4 +488,6 @@ void sam460_init(unsigned long fdt_addr)
     bd.bi_plb_busfreq = 230000000;  /* PLB bus speed in Hz */
     bd.bi_pci_busfreq = 66000000;   /* PCI bus speed in Hz (66 MHz PCI-X) */
     bd.bi_opbfreq = 115000000;      /* OPB clock in Hz (PLB/2) */
+
+    setup_timer(bd.bi_intfreq);
 }
