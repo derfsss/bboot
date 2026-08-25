@@ -313,10 +313,19 @@ static void setup_pom(void)
     write32_le(POM1PCIAH, 0x00000000);
     write32_le(POM1SA, 0xF0000001);     /* ~(256MB-1) | enable */
 
-    /* PIM0: PCI DMA addr 0 -> CPU PA 0, sized to RAM (512MB default) */
+    /*
+     * PIM0: all of SDRAM at PCI address 0, sized to the RAM we actually
+     * have, as U-Boot's __pci_target_init() does with
+     * ~(gd->ram_size - 1) | 3. The window is what the bridge uses to
+     * translate inbound DMA, and QEMU models it, so a window smaller than
+     * memory silently drops every transfer whose buffer sits above it:
+     * with the 512MB value hardcoded here before, disk DMA into the top of
+     * a 2GB machine went nowhere and the AmigaOS IDE driver configured the
+     * drive but never read a usable sector.
+     */
     write32_le(PIM0LAL, 0x00000000);
     write32_le(PIM0LAH, 0x00000000);
-    write32_le(PIM0SAL, 0xE0000003);    /* ~(512MB-1) | prefetch | enable */
+    write32_le(PIM0SAL, (~(bd.bi_memsize - 1)) | 3);    /* prefetch | enable */
 }
 
 /*
