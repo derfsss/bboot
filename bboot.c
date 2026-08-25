@@ -127,7 +127,30 @@ int start(unsigned long r3, unsigned long r4, unsigned long r5,
             args = (char *)r6;
         }
         VLVL(3, puts("Starting exec"));
-        ((loader_func)brd.exec_addr)("AmigaOS4", kicklist, brd.info, args);
+        if (brd.stack_top) {
+            /*
+             * Hand over on a stack near the top of RAM, which is where
+             * U-Boot leaves it. QEMU's -kernel entry on sam460ex leaves
+             * sp a few bytes below the address we load the AmigaOS
+             * loader at, and the loader keeps using the sp it inherits
+             * while allocating around its own image, so it ends up
+             * writing over its own stack frames. Does not return.
+             */
+            register const char *a0 asm("r3") = "AmigaOS4";
+            register void *a1 asm("r4") = kicklist;
+            register void *a2 asm("r5") = brd.info;
+            register char *a3 asm("r6") = args;
+            asm volatile(
+                "mr 1,%[sp]\n"
+                "mtctr %[fn]\n"
+                "bctrl\n"
+                :
+                : [sp] "r" (brd.stack_top), [fn] "r" (brd.exec_addr),
+                  "r" (a0), "r" (a1), "r" (a2), "r" (a3)
+                : "ctr", "lr", "memory");
+        } else {
+            ((loader_func)brd.exec_addr)("AmigaOS4", kicklist, brd.info, args);
+        }
     }
 
     puts("Booting failed, exiting.");

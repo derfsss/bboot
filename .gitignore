@@ -2,3 +2,5 @@ Depend
 bboot
 *~
 *.o
+bboot-sam460
+bboot-g5

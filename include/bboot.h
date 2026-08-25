@@ -38,6 +38,7 @@ typedef struct {
     unsigned long initrd_start;
     unsigned long initrd_end;
     char *bootargs;
+    unsigned long stack_top;    /* if set, switch to this sp before boot */
 } brd_t;
 
 extern brd_t brd;
