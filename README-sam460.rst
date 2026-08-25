@@ -65,39 +65,6 @@ which is where -serial points. Higher debug levels print more, and a
 Kickstart whose Kicklayout loads kernel.debug prints a great deal more
 than one loading kernel.
 
-Setting the debug level when booting with U-Boot
-================================================
-
-Without -kernel the machine boots the U-Boot image instead, which QEMU
-loads as u-boot-sam460.bin from its data directory. That image has the
-AmigaOS command line built into it as::
-
-  os4_commandline=debuglevel=0
-
-and with no saved environment in flash to override it, AmigaOS starts
-with debug output off. Changing the 0 into a 1 is a single byte edit and
-leaves the image the same size. The string is not at a fixed offset, so
-search for it. Keep a copy of the original image first::
-
-  python3 patch-uboot.py
-
-with patch-uboot.py being::
-
-  path = "u-boot-sam460.bin"
-  key = b"os4_commandline=debuglevel="
-  d = bytearray(open(path, "rb").read())
-  i = d.find(key)
-  if i < 0:
-      raise SystemExit("string not found")
-  print("found at offset", hex(i), "value", chr(d[i + len(key)]))
-  d[i + len(key)] = ord("1")
-  open(path, "wb").write(d)
-  print("set to 1")
-
-Note that the built in command line contains no serial keyword, so this
-raises the debug level but does not by itself route the output to the
-serial port. With bboot use -append, where both can be given.
-
 Building
 ========
 
