@@ -39,39 +39,53 @@ void pci_set_addr(unsigned long conf_addr, unsigned long data_addr)
     pci_data_addr = data_addr;
 }
 
+/*
+ * Config space is addressed the usual CONFIG_ADDRESS/CONFIG_DATA way: the
+ * address register takes the dword-aligned register number and the byte
+ * lane comes from the offset within the 4 byte data port. Putting the low
+ * bits of the register number in the address register instead makes every
+ * unaligned access land on byte 0 of the dword, which quietly turned reads
+ * of PCI_INTERRUPT_PIN, PCI_LATENCY_TIMER and PCI_HEADER_TYPE into reads of
+ * PCI_INTERRUPT_LINE, PCI_CACHE_LINE_SIZE and PCI_BIST.
+ */
+static void pci_set_conf_addr(pcidev_t device, u16 reg)
+{
+	write32_le(pci_conf_addr, device | (reg & ~3) | (1UL << 31));
+}
+
 u8 pci_read_config8(pcidev_t device, u16 reg)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
-	return read8(pci_data_addr);
+	pci_set_conf_addr(device, reg);
+	return read8(pci_data_addr + (reg & 3));
 }
 
 u16 pci_read_config16(pcidev_t device, u16 reg)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
-	return read16_le(pci_data_addr);
+	pci_set_conf_addr(device, reg);
+	return read16_le(pci_data_addr + (reg & 2));
 }
 
 u32 pci_read_config32(pcidev_t device, u16 reg)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	pci_set_conf_addr(device, reg);
 	return read32_le(pci_data_addr);
 }
 
 void pci_write_config8(pcidev_t device, u16 reg, u8 val)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
-	write8(pci_data_addr, val);
+	pci_set_conf_addr(device, reg);
+	write8(pci_data_addr + (reg & 3), val);
 }
 
 void pci_write_config16(pcidev_t device, u16 reg, u16 val)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
-	write16_le(pci_data_addr, val);
+	pci_set_conf_addr(device, reg);
+	write16_le(pci_data_addr + (reg & 2), val);
 }
 
 void pci_write_config32(pcidev_t device, u16 reg, u32 val)
 {
-	write32_le(pci_conf_addr, device | reg | (1UL << 31));
+	pci_set_conf_addr(device, reg);
 	write32_le(pci_data_addr, val);
 }
 
