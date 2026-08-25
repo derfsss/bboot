@@ -72,25 +72,37 @@ static uint32_t ioavail, memavail;
  *   PCI regs/IO: VA 0xD0000000 -> PA 0xC_00000000
  */
 
-/* TLB Word 0 flags */
-#define TLB_VALID   0x00000200   /* V bit */
-#define TLB_256K    0x00000040   /* DSIZ = 0100 = 256KB */
-#define TLB_256M    0x00000090   /* DSIZ = 1001 = 256MB */
+/*
+ * TLB word encodings, named as in U-Boot's asm/mmu.h so the table below
+ * can be read next to board/ACube/Sam460ex/init.S.
+ */
 
-/* TLB Word 2 flags */
-#define TLB_I       0x00000400   /* Cache inhibited */
-#define TLB_G       0x00000100   /* Guarded */
-#define TLB_SX      0x00000004   /* Supervisor execute */
-#define TLB_SW      0x00000002   /* Supervisor write */
-#define TLB_SR      0x00000001   /* Supervisor read */
+/* Word 0: EPN | size | V */
+#define TLB_VALID   0x00000200
+#define TLB_1K      0x00000000
+#define TLB_4K      0x00000010
+#define TLB_16K     0x00000020
+#define TLB_64K     0x00000030
+#define TLB_256K    0x00000040
+#define TLB_1M      0x00000050
+#define TLB_16M     0x00000070
+#define TLB_256M    0x00000090
 
-#define TLB_MMIO    (TLB_I | TLB_G | TLB_SX | TLB_SW | TLB_SR)
-#define TLB_RAM     (TLB_SX | TLB_SW | TLB_SR)   /* cached, not guarded */
+/* Word 2: storage attributes and access control */
+#define SA_W        0x00000800   /* write-through */
+#define SA_I        0x00000400   /* caching inhibited */
+#define SA_M        0x00000200   /* memory coherence */
+#define SA_G        0x00000100   /* guarded */
+#define AC_X        0x00000024   /* execute, user + supervisor */
+#define AC_W        0x00000012   /* write, user + supervisor */
+#define AC_R        0x00000009   /* read, user + supervisor */
+#define AC_RW       (AC_R | AC_W)
+#define AC_RWX      (AC_R | AC_W | AC_X)
 
 static void write_tlb(int index, uint32_t w0, uint32_t w1, uint32_t w2)
 {
     asm volatile(
-        "mtspr 946, %4\n"       /* MMUCR = 0 (TID=0, TS=0) */
+        "mtspr 946, %4\n"      /* MMUCR = 0 (TID=0, TS=0) */
         "tlbwe %0, %3, 0\n"    /* Write TLB word 0 */
         "tlbwe %1, %3, 1\n"    /* Write TLB word 1 */
         "tlbwe %2, %3, 2\n"    /* Write TLB word 2 */
@@ -101,72 +113,77 @@ static void write_tlb(int index, uint32_t w0, uint32_t w1, uint32_t w2)
     );
 }
 
+/*
+ * The mapping U-Boot leaves in place for AmigaOS, transcribed from
+ * board/ACube/Sam460ex/init.S of ACube's U-Boot 2015.d. SDRAM is not in
+ * this table: U-Boot programs it at run time from the DDR2 init.
+ *
+ * QEMU's -kernel entry gives us only one fabricated entry for VA 0 with a
+ * 2GB size that cannot be encoded in the 44x DSIZ field - read back with
+ * tlbre it becomes 4KB - so we program the whole layout ourselves.
+ */
+static const struct {
+    uint32_t epn, size, rpn, erpn, attr;
+} tlbtab[] = {
+    /* EBC boot space (flash) */
+    { 0xF0000000, TLB_256M, 0xF0000000, 0x4, AC_RWX | SA_G },
+    /* internal PCI registers, config and I/O space */
+    { 0xD0000000, TLB_256M, 0x00000000, 0xC, AC_RW | SA_G | SA_I },
+    /* PCI memory windows 1 and 2 */
+    { 0x80000000, TLB_256M, 0x80000000, 0xC, AC_RW | SA_G | SA_I },
+    { 0x90000000, TLB_256M, 0x90000000, 0xC, AC_RW | SA_G | SA_I },
+    /* PCIe memory windows */
+    { 0xA0000000, TLB_256M, 0xA0000000, 0xD, AC_RW | SA_G | SA_I },
+    { 0xB0000000, TLB_256M, 0xB0000000, 0xD, AC_RW | SA_G | SA_I },
+    { 0xC0000000, TLB_256M, 0xC0000000, 0xD, AC_RW | SA_G | SA_I },
+    /* PCIe config space */
+    { 0xE0000000, TLB_16M, 0x00000000, 0xD, AC_RW | SA_G | SA_I },
+    { 0xE1000000, TLB_16M, 0x20000000, 0xD, AC_RW | SA_G | SA_I },
+    { 0xE3000000, TLB_1K, 0x10000000, 0xD, AC_RW | SA_G | SA_I },
+    { 0xE3001000, TLB_1K, 0x30000000, 0xD, AC_RW | SA_G | SA_I },
+    /* PCIe UTL registers */
+    { 0xE4000000, TLB_16K, 0x08010000, 0xC, AC_RW | SA_G | SA_I },
+    /* on chip memory */
+    { 0xE5000000, TLB_1M, 0x00000000, 0x4, AC_RWX | SA_I },
+    /* local configuration registers: UART, I2C, GPIO, EBC, SDRAM, EMAC */
+    { 0xEF000000, TLB_16M, 0xEF000000, 0x4, AC_RWX | SA_G | SA_I },
+    /* AHB: internal USB and SATA */
+    { 0xE2000000, TLB_1M, 0xBFF00000, 0x4, AC_RWX | SA_G | SA_I },
+};
+
 static void setup_tlb(uint32_t memsize)
 {
+    unsigned int i, n = sizeof(tlbtab) / sizeof(tlbtab[0]);
+
     /*
-     * RAM: VA 0x00000000 -> PA 0x00000000 in 256MB pages, cached.
+     * Slot order matters, so keep U-Boot's: the static table occupies the
+     * low indices (entry 0 is the flash window) and SDRAM goes in the
+     * entries after it, which is where U-Boot's program_tlb() finds free
+     * slots. The AmigaOS kernel recycles TLB entries from the bottom once
+     * it takes over; with RAM in entry 0 it unmaps low memory out from
+     * under its own exception vectors and loops in an ITLB fault.
      *
-     * QEMU's -kernel boot hands us a single fabricated TLB entry 0 for
-     * VA 0 -> PA 0 with a size of 2GB, which cannot be encoded in the
-     * 44x TLBHI DSIZ field (256MB is the largest page). A guest reading
-     * that entry back with tlbre gets DSIZ = 1 (4KB), so the AmigaOS
-     * loader, which does a read-modify-write of the entry mapping VA 0
-     * to enable caching and then rfi's, shrinks RAM to 4KB and faults on
-     * the rfi. Replace it with properly encoded entries like U-Boot's
-     * init.S does. Overwriting entry 0 in place is safe: the first page
-     * still covers the code doing the write.
+     * Write the SDRAM entries first: overwriting entry 0, which is the
+     * only mapping QEMU's -kernel entry gives us, is only safe once
+     * another valid entry already covers the code doing the write.
+     *
+     * SDRAM uses 256MB pages, the largest the 44x TLB encodes, with the
+     * attributes U-Boot's program_tlb() applies: every access bit set and
+     * caching inhibited, since Sam460ex does not define CONFIG_4xx_DCACHE.
+     * The AmigaOS loader turns caching on itself later.
      */
     unsigned int pages = (memsize + 0xfffffff) >> 28;
     if (!pages) pages = 1;
-    if (pages > 8) pages = 8;       /* entries 0 and 53-59: up to 2GB */
-    for (unsigned int i = 0; i < pages; i++) {
-        write_tlb(i ? 60 - (int)i : 0,
-            (i << 28) | TLB_VALID | TLB_256M,
-            (i << 28),              /* RPN, ERPN = 0 */
-            TLB_RAM);
+    if (pages > 64 - n) pages = 64 - n;
+    for (i = 0; i < pages; i++) {
+        write_tlb(n + i, (i << 28) | TLB_VALID | TLB_256M, i << 28,
+                  AC_RWX | SA_I);
     }
 
-    /*
-     * Entry 60: PCI memory window 2
-     * VA 0x90000000 -> PA 0xC_90000000, 256MB, cache-inhibited + guarded
-     * Matches U-Boot: tlbentry(CONFIG_SYS_PCI_MEMBASE+0x10000000, ...)
-     */
-    write_tlb(60,
-        0x90000000 | TLB_VALID | TLB_256M,
-        0x90000000 | 0xC,       /* RPN=0x90000000 | ERPN=C */
-        TLB_MMIO);
-
-    /*
-     * Entry 61: PCI memory window 1
-     * VA 0x80000000 -> PA 0xC_80000000, 256MB, cache-inhibited + guarded
-     * Matches U-Boot: tlbentry(CONFIG_SYS_PCI_MEMBASE, SZ_256M, ...)
-     * VA = PCI bus addr so kernel can use BAR values directly as VAs
-     */
-    write_tlb(61,
-        0x80000000 | TLB_VALID | TLB_256M,
-        0x80000000 | 0xC,       /* RPN=0x80000000 | ERPN=C */
-        TLB_MMIO);
-
-    /*
-     * Entry 62: OPB peripheral space (UART, I2C, GPIO, etc.)
-     * VA 0xEF600000 -> PA 0x4_EF600000, 256KB, cache-inhibited + guarded
-     * U-Boot maps 16M at 0xEF000000; 256K at 0xEF600000 covers the UART
-     */
-    write_tlb(62,
-        0xEF600000 | TLB_VALID | TLB_256K,
-        0xEF600000 | 0x4,       /* RPN | ERPN=4 */
-        TLB_MMIO);
-
-    /*
-     * Entry 63: PCI config + I/O + internal regs
-     * VA 0xD0000000 -> PA 0xC_00000000, 256MB, cache-inhibited + guarded
-     * Matches U-Boot: tlbentry(CONFIG_SYS_PCI_BASE, SZ_256M, 0, 0xC, ...)
-     * Covers: PCI config at VA 0xDEC00000, PCI I/O at VA 0xD8000000
-     */
-    write_tlb(63,
-        0xD0000000 | TLB_VALID | TLB_256M,
-        0x00000000 | 0xC,       /* RPN=0 | ERPN=C */
-        TLB_MMIO);
+    for (i = 0; i < n; i++) {
+        write_tlb(i, tlbtab[i].epn | TLB_VALID | tlbtab[i].size,
+                  tlbtab[i].rpn | tlbtab[i].erpn, tlbtab[i].attr);
+    }
 }
 
 /*
